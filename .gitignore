@@ -1,0 +1,4 @@
+echo __pycache__/ > .gitignore
+echo venv/ >> .gitignore
+echo *.pkl >> .gitignore
+echo *.h5 >> .gitignore

@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AlgoTrade AI — MarketPulse Optimizer</title>
+  <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+
+<div class="app-layout">
+
+  <!-- ══════════════  SIDEBAR  ══════════════ -->
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <div class="sidebar-title">⚙️ Configuration</div>
+
+      <div class="sb-field">
+        <label class="sb-label">Crypto Symbol</label>
+        <input id="cfg-ticker" class="sb-input" type="text" value="BTC-USD" placeholder="BTC-USD" />
+        <div class="sb-caption">💡 Try: <code>BTC-USD</code> · <code>ETH-USD</code> · <code>SOL-USD</code></div>
+      </div>
+
+      <div class="sb-section-title">📅 Training Data Range</div>
+      <div class="sb-field">
+        <label class="sb-label">Download history starting from</label>
+        <input id="cfg-start" class="sb-input" type="date" value="2018-01-01" />
+        <div class="sb-caption">📚 Controls the <strong>training dataset size</strong> — how many years of price history the AI studies.</div>
+      </div>
+
+      <details class="sb-expander">
+        <summary>❓ Why go back to 2015/2018?</summary>
+        <div class="sb-expander-body">
+          <p><strong>More historical data = better trained AI.</strong></p>
+          <ul>
+            <li>2018 gives ~7 years including bull &amp; bear markets</li>
+            <li>2015 gives ~10 years — even more patterns</li>
+            <li>The AI needs thousands of examples to learn reliable patterns</li>
+          </ul>
+          <p>This is <strong>not</strong> the same as the LSTM window below.<br>
+          Think: <em>the textbook you study from</em> vs <em>the paragraph you read before answering a question.</em></p>
+        </div>
+      </details>
+
+      <div class="sb-field" style="margin-top:1rem">
+        <label class="sb-label">Which AI model drives the strategy?</label>
+        <select id="cfg-model" class="sb-input">
+          <option value="XGBoost">XGBoost</option>
+          <option value="RandomForest">RandomForest</option>
+          <option value="LSTM">LSTM</option>
+        </select>
+      </div>
+
+      <details class="sb-expander">
+        <summary>ℹ️ Model differences</summary>
+        <div class="sb-expander-body">
+          <table class="sb-table">
+            <tr><th>Model</th><th>Think of it as</th><th>Speed</th></tr>
+            <tr><td><strong>XGBoost</strong></td><td>Expert voting panel</td><td>⚡ Fast</td></tr>
+            <tr><td><strong>RandomForest</strong></td><td>Many independent analysts</td><td>⚡ Fast</td></tr>
+            <tr><td><strong>LSTM</strong></td><td>Analyst with memory</td><td>🐢 Slower</td></tr>
+          </table>
+        </div>
+      </details>
+
+      <div class="sb-section-title" style="margin-top:1rem">🧠 LSTM Sequence Length</div>
+      <div class="sb-field">
+        <label class="sb-label">LSTM: days of input per prediction (<span id="window-val">10</span> days)</label>
+        <input id="cfg-window" class="sb-range" type="range" min="1" max="60" value="10" />
+        <div class="sb-caption">Currently <strong id="window-val2">10</strong> days per prediction input.</div>
+      </div>
+
+      <details class="sb-expander">
+        <summary>❓ Why is this only 1–60 if data goes back to 2015?</summary>
+        <div class="sb-expander-body">
+          <p><strong>These are two completely different things:</strong></p>
+          <table class="sb-table">
+            <tr><th>Parameter</th><th>What it controls</th></tr>
+            <tr><td>Training date range</td><td>How many years of data the AI <em>learns from</em></td></tr>
+            <tr><td>LSTM sequence length</td><td>How many days the AI <em>reads at once</em> to make one prediction</td></tr>
+          </table>
+          <p style="margin-top:0.5rem"><strong>Analogy:</strong><br>
+          You study 10 years of history books <em>(training data)</em><br>
+          When answering, you re-read the last 10 lines <em>(sequence length)</em></p>
+          <p><strong>10 days is the sweet spot</strong> validated by the base research paper.</p>
+        </div>
+      </details>
+
+      <div style="margin-top:1.25rem;border-top:1px solid var(--border);padding-top:1rem">
+        <button id="run-btn" class="btn-run">🚀 Run Full Analysis</button>
+      </div>
+
+    </div><!-- sidebar-inner -->
+  </aside>
+
+  <!-- ══════════════  MAIN CONTENT  ══════════════ -->
+  <main class="main-content">
+
+    <!-- Tabs -->
+    <div class="tab-bar">
+      <button class="tab-btn active" data-tab="analysis">📊 Analysis &amp; Trading</button>
+      <button class="tab-btn"        data-tab="architecture">🏗️ Architecture &amp; Process Flow</button>
+    </div>
+
+    <!-- ══════  TAB: ANALYSIS  ══════ -->
+    <div id="tab-analysis" class="tab-pane active">
+
+      <h1 class="page-title">📊 AlgoTrade AI — MarketPulse Optimizer</h1>
+      <p class="page-sub">
+        An <strong>AI-powered trading system</strong> that learns from crypto history, predicts market direction,
+        and simulates whether those predictions would have made money.<br>
+        <span class="muted">&gt; Trains 3 AI models → generates Buy/Sell/Hold signals → compares strategy vs simply holding</span>
+      </p>
+
+      <hr class="divider" />
+
+      <!-- Live Signal ─────────────────────────────── -->
+      <h2 id="live-title" class="section-title">⚡ Live Signal — What should you do with BTC-USD RIGHT NOW?</h2>
+      <p class="section-caption">Auto-refreshes every 5 minutes using the latest market data · Powered by XGBoost</p>
+
+      <div id="live-spinner" class="spinner-row"><span class="spinner"></span> Fetching live market data…</div>
+
+      <div id="live-result" style="display:none">
+        <div class="live-row">
+          <div id="live-card" class="live-action-card">
+            <div id="live-emoji"  class="live-emoji"></div>
+            <div id="live-action" class="live-action-text"></div>
+            <div id="live-asof"  class="live-asof"></div>
+          </div>
+          <div class="metrics-row">
+            <div class="metric-box">
+              <div class="metric-label">Current Price</div>
+              <div id="m-price" class="metric-value"></div>
+              <div id="m-change" class="metric-delta"></div>
+            </div>
+            <div class="metric-box">
+              <div class="metric-label">AI Predicts Tomorrow</div>
+              <div id="m-direction" class="metric-value"></div>
+              <div id="m-pred" class="metric-delta"></div>
+            </div>
+            <div class="metric-box">
+              <div class="metric-label">Signal Strength</div>
+              <div id="m-strength" class="metric-value"></div>
+              <div id="m-strength-sub" class="metric-delta"></div>
+            </div>
+          </div>
+        </div>
+        <details class="expander">
+          <summary id="live-expander-title">📖 How is this live signal generated?</summary>
+          <div class="expander-body">
+            <ol id="live-steps"></ol>
+          </div>
+        </details>
+      </div>
+
+      <div id="live-error" class="box-warning" style="display:none"></div>
+
+      <hr class="divider" />
+
+      <!-- Pre-run ──────────────────────────────────── -->
+      <div id="pre-run">
+        <div class="cols-3">
+          <div class="info-box">
+            <strong>Step 1</strong> 👈<br>Choose a crypto coin and date range in the sidebar
+          </div>
+          <div class="info-box">
+            <strong>Step 2</strong> 🧠<br>Pick an AI model (XGBoost is fastest)
+          </div>
+          <div class="info-box">
+            <strong>Step 3</strong> 🚀<br>Click <strong>Run Full Analysis</strong> to train models
+          </div>
+        </div>
+
+        <hr class="divider" />
+
+        <details class="expander">
+          <summary>📚 How does this system work?</summary>
+          <div class="expander-body">
+<pre class="code-block">1. FETCH DATA       → Downloads real price history from Yahoo Finance
+2. COMPUTE SIGNALS  → Calculates 11 technical indicators traders use
+3. TRAIN AI         → Teaches 3 models to predict next-day price direction
+4. GENERATE SIGNALS → BUY / SELL / HOLD based on predictions
+5. BACKTEST         → Simulates trading to measure real performance</pre>
+            <table class="content-table" style="margin-top:0.75rem">
+              <tr><th>Model</th><th>Think of it as</th></tr>
+              <tr><td><strong>XGBoost</strong></td><td>Expert voting panel — very accurate on patterns</td></tr>
+              <tr><td><strong>RandomForest</strong></td><td>Many analysts independently voting, majority wins</td></tr>
+              <tr><td><strong>LSTM</strong></td><td>Analyst with memory — learns from sequence of days</td></tr>
+            </table>
+            <p style="margin-top:0.75rem"><strong>Why crypto?</strong> Trades 24/7 · More data to learn from · Live prices always available</p>
+          </div>
+        </details>
+      </div>
+
+      <!-- Running ──────────────────────────────────── -->
+      <div id="run-progress" style="display:none">
+        <div class="spinner-row large">
+          <span class="spinner large"></span>
+          <div>
+            <div class="progress-title">⏳ Training AI models on full history… (~2-3 minutes)</div>
+            <div id="progress-sub" class="muted" style="margin-top:4px"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Results ──────────────────────────────────── -->
+      <div id="results" style="display:none">
+
+        <div id="success-banner" class="box-success"></div>
+
+        <hr class="divider" />
+
+        <!-- Plain English Summary -->
+        <h3 class="section-title">📝 Plain English Summary</h3>
+        <div class="cols-2">
+          <div id="summary-left"  class="info-box"></div>
+          <div id="summary-right" class="info-box"></div>
+        </div>
+
+        <hr class="divider" />
+
+        <!-- Model Accuracy -->
+        <h3 class="section-title">🤖 How Accurate Were the AI Models?</h3>
+        <p class="section-caption">Most important metric: <strong>Direction Accuracy</strong> (did AI correctly predict UP or DOWN?). 50% = coin flip.</p>
+        <div class="cols-3" id="model-cards"></div>
+
+        <!-- Radar Chart -->
+        <h4 class="subsection-title">🕸️ Model Comparison — Radar Chart</h4>
+        <p class="section-caption">Each axis = one performance dimension. Bigger area = better overall model.</p>
+        <div id="chart-radar" class="chart-box"></div>
+        <details class="expander">
+          <summary>📖 How to explain this radar chart</summary>
+          <div class="expander-body">
+            <p><strong>Say this to faculty:</strong></p>
+            <blockquote>"This is a radar chart — also called a spider chart. Each corner represents one way to measure model performance. The further a model's shape extends toward a corner, the better it scores on that dimension. A model with a large overall area is good across all dimensions — not just one. This lets us compare XGBoost, RandomForest, and LSTM side by side without picking just one metric."</blockquote>
+            <table class="content-table" style="margin-top:0.75rem">
+              <tr><th>Axis</th><th>What it measures</th><th>Ideal value</th></tr>
+              <tr><td><strong>Direction Accuracy</strong></td><td>Did AI predict up/down correctly?</td><td>As high as possible (100 = perfect)</td></tr>
+              <tr><td><strong>Win Rate (proxy)</strong></td><td>% of trades that were profitable</td><td>As high as possible</td></tr>
+              <tr><td><strong>Sharpe Score</strong></td><td>Risk-adjusted return (normalised to 100)</td><td>As high as possible</td></tr>
+              <tr><td><strong>Low Error</strong></td><td>Inverse of prediction error — higher = less error</td><td>As high as possible</td></tr>
+            </table>
+          </div>
+        </details>
+
+        <hr class="divider" />
+
+        <!-- Feature Importance -->
+        <h3 class="section-title">🔍 What Did the AI Learn? — Feature Importance</h3>
+        <p class="section-caption">Which of the 11 technical indicators did XGBoost rely on most to make predictions?</p>
+        <div id="chart-importance" class="chart-box"></div>
+        <div id="top-feature-msg"></div>
+        <details class="expander">
+          <summary>📖 What does feature importance mean?</summary>
+          <div class="expander-body">
+            <ul>
+              <li>XGBoost builds <strong>decision trees</strong> that split on features to make predictions.</li>
+              <li><strong>Feature importance</strong> = how many times each indicator was used in splits, weighted by prediction error reduction.</li>
+              <li><strong>High score = the AI trusted that indicator most</strong> when deciding Buy/Sell/Hold.</li>
+              <li>This is evidence your indicator choices were <strong>validated by the AI itself</strong>, not just assumed.</li>
+            </ul>
+          </div>
+        </details>
+
+        <hr class="divider" />
+
+        <!-- Backtest Stats -->
+        <h3 id="backtest-title" class="section-title">📊 Strategy Performance — Did It Make Money?</h3>
+        <p id="backtest-caption" class="section-caption"></p>
+        <div class="cols-6" id="stat-grid"></div>
+        <details class="expander" id="backtest-expander">
+          <summary>📖 Understand these numbers</summary>
+          <div class="expander-body">
+            <table class="content-table" id="backtest-table"></table>
+          </div>
+        </details>
+
+        <hr class="divider" />
+
+        <!-- Cumulative Returns -->
+        <h3 class="section-title">💹 Strategy vs Buy &amp; Hold — Visual Comparison</h3>
+        <div id="returns-legend" class="muted" style="font-size:13px;margin-bottom:0.5rem"></div>
+        <div id="chart-returns" class="chart-box"></div>
+
+        <hr class="divider" />
+
+        <!-- Investment Calculator -->
+        <h3 class="section-title">🧮 What Would YOUR Investment Be Worth?</h3>
+        <p class="section-caption">See how much you would have made (or lost) following this strategy vs just holding</p>
+        <div class="calc-layout">
+          <div class="calc-inputs">
+            <label class="sb-label">Enter your investment amount (₹)</label>
+            <input id="calc-amount" class="sb-input" type="number" value="10000" min="100" step="1000" />
+            <label class="sb-label" style="margin-top:0.75rem">Currency</label>
+            <select id="calc-currency" class="sb-input">
+              <option value="₹">₹ INR</option>
+              <option value="$">$ USD</option>
+              <option value="€">€ EUR</option>
+            </select>
+          </div>
+          <div class="cols-2" style="flex:1">
+            <div class="metric-box tall" id="calc-ai"></div>
+            <div class="metric-box tall" id="calc-bh"></div>
+          </div>
+        </div>
+        <div id="calc-outcome" style="margin-top:0.75rem"></div>
+
+        <hr class="divider" />
+
+        <!-- Signals Table -->
+        <h3 class="section-title">📋 Recent Trading Signals — Last 10 Days</h3>
+        <p class="section-caption">What the AI recommended on each of the last 10 trading days</p>
+        <div class="table-wrap">
+          <table class="data-table" id="signals-table"></table>
+        </div>
+        <details class="expander">
+          <summary>📖 How to read this table</summary>
+          <div class="expander-body">
+            <table class="content-table">
+              <tr><th>Column</th><th>Meaning</th></tr>
+              <tr><td><strong>Closing Price</strong></td><td>Actual crypto price that day</td></tr>
+              <tr><td><strong>Predicted Return</strong></td><td>AI forecast (positive = expects rise, negative = expects fall)</td></tr>
+              <tr><td><strong>Action</strong></td><td>🟢 BUY = predicted strong rise · 🔴 SELL = predicted strong fall · ⬜ HOLD = uncertain</td></tr>
+              <tr><td><strong>Return Earned</strong></td><td>Actual profit/loss from that day's position (after 0.1% transaction fee)</td></tr>
+              <tr><td><strong>Portfolio Value</strong></td><td>Cumulative growth since start (1.5 = grew 50%)</td></tr>
+            </table>
+          </div>
+        </details>
+
+        <hr class="divider" />
+
+        <!-- Download -->
+        <h3 class="section-title">💾 Download Full Results</h3>
+        <button id="download-btn" class="btn-download">⬇️ Download Backtest Data as CSV</button>
+
+      </div><!-- #results -->
+
+    </div><!-- tab-analysis -->
+
+    <!-- ══════  TAB: ARCHITECTURE  ══════ -->
+    <div id="tab-architecture" class="tab-pane" style="display:none">
+
+      <h2 class="section-title">System Architecture</h2>
+      <p class="section-caption">How all components connect — from raw data to trading decision</p>
+      <div id="chart-arch" class="chart-box" style="height:700px"></div>
+
+      <hr class="divider" />
+
+      <h2 class="section-title">Detailed Process Flow</h2>
+      <p class="section-caption">Step-by-step: what happens when you click Run Analysis</p>
+      <div id="process-flow"></div>
+
+      <hr class="divider" />
+
+      <h2 class="section-title">Technology Stack</h2>
+      <div class="cols-4">
+        <div class="info-box">
+          <strong>Data Layer</strong><br><br>
+          <code>yfinance</code> — live data<br>
+          <code>pandas</code> — processing<br>
+          <code>numpy</code> — computation
+        </div>
+        <div class="info-box">
+          <strong>ML Layer</strong><br><br>
+          <code>scikit-learn</code> — RF + scaling<br>
+          <code>xgboost</code> — gradient boosting<br>
+          <code>tensorflow/keras</code> — LSTM
+        </div>
+        <div class="info-box">
+          <strong>Evaluation</strong><br><br>
+          Custom RMSE / DA metrics<br>
+          Sharpe · Drawdown · Win Rate<br>
+          Time-aware backtesting
+        </div>
+        <div class="info-box">
+          <strong>Interface</strong><br><br>
+          <code>flask</code> — web backend<br>
+          <code>plotly</code> — interactive charts<br>
+          <code>joblib</code> — model persistence
+        </div>
+      </div>
+
+    </div><!-- tab-architecture -->
+
+  </main><!-- main-content -->
+</div><!-- app-layout -->
+
+<script src="/static/js/main.js"></script>
+</body>
+</html>
