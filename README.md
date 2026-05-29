@@ -426,18 +426,45 @@ The following extensions are identified as high-impact directions for continued 
 
 ---
 
-## Team & Contributions
+## Competencies Demonstrated
 
-| Roll Number | Name | Role |
-|-------------|------|------|
-| 22NG1A6105 | — | Machine Learning Pipeline, XGBoost/RandomForest Training |
-| 22NG1A6107 | — | Flask Backend, REST API Development |
-| 22NG1A6108 | — | Streamlit Dashboard, Frontend Development |
-| 22NG1A6112 | — | Technical Indicators, Backtesting Engine, Documentation |
+This project was developed as a team of four undergraduate students. The work demonstrates applied competence across the following areas — all of which are directly relevant to graduate-level study in Artificial Intelligence and Machine Learning.
 
-**Programme**: B.Tech in Artificial Intelligence & Machine Learning  
-**Batch**: 2022–2026  
-**Institution**: —  
+### Core ML & Data Science
+
+- **Supervised learning pipeline design**: End-to-end implementation from raw data ingestion through feature engineering, model training, evaluation, and deployment
+- **Ensemble methods**: Gradient boosting (XGBoost) and bagging (Random Forest) with hyperparameter optimisation and comparative analysis
+- **Deep learning for time series**: LSTM architecture design, windowed sequence generation, EarlyStopping regularisation, and interpretation of recurrent model behaviour on financial data
+- **Feature engineering from domain knowledge**: Translation of financial market microstructure into 11 quantitative indicators spanning trend, momentum, oscillator, and volume categories
+- **Statistical evaluation**: Directional accuracy, RMSE, Sharpe ratio, maximum drawdown, and win rate — with critical awareness of which metrics are misleading in financial contexts (e.g., why RMSE alone is uninformative for return prediction)
+- **Time-series-aware validation**: Time-preserving train/validation/test splits to prevent look-ahead bias, a critical technique rarely applied in undergraduate projects
+
+### Software Engineering
+
+- **Dual-interface architecture**: Streamlit for rapid experimentation; Flask + vanilla JavaScript/Plotly.js + CSS for production web deployment
+- **Asynchronous pipeline execution**: UUID-tracked background jobs with polling-based status updates
+- **REST API design**: Clean endpoint structure with JSON serialisation, error handling, and CSV download support
+- **Model persistence and reproducibility**: Serialisation of trained models (joblib, HDF5) and fitted scalers for consistent inference
+
+### Financial Domain Knowledge
+
+- **Technical analysis theory**: Understanding of indicator families and their economic interpretations
+- **Transaction-cost-aware backtesting**: Realistic simulation incorporating exchange fees and signal-entry cost deduction
+- **Risk-adjusted performance measurement**: Sharpe ratio interpretation, drawdown analysis, regime-awareness in strategy evaluation
+
+---
+
+## Relevance to German AI/ML Research
+
+This project intersects with several active research areas in German universities:
+
+| Research Area | German Institutions Active in This Space | Project Relevance |
+|---------------|------------------------------------------|-------------------|
+| **Time Series Forecasting** | TU Munich, University of Tübingen, Hasso Plattner Institute | LSTM + XGBoost comparison on non-stationary financial data |
+| **Financial Machine Learning** | Goethe University Frankfurt, Karlsruhe Institute of Technology | Transaction-cost-aware backtesting, signal threshold optimisation |
+| **Explainable AI (XAI)** | Fraunhofer IAIS, TU Berlin, University of Bonn | Feature importance analysis validates which indicators drive predictions |
+| **Reinforcement Learning for Trading** | University of Freiburg, TU Darmstadt | Identified as primary future work direction (DQN/PPO for position sizing) |
+| **Applied Deep Learning** | Max Planck Institute for Intelligent Systems (Tübingen) | LSTM architecture design with EarlyStopping for noise-prone financial data |
 
 ---
 
@@ -452,12 +479,4 @@ The following extensions are identified as high-impact directions for continued 
 
 ---
 
-## License
-
-This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
-
----
-
-<p align="center">
-  <i>"In trading, data is the new alpha."</i>
-</p>
+<p align="center"><i>"In trading, data is the new alpha."</i></p>
