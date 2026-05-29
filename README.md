@@ -1,4 +1,4 @@
-# AlgoTrade AI — MarketPulse Optimizer
+﻿# AlgoTrade AI — MarketPulse Optimizer
 
 **An AI-powered algorithmic trading system for cryptocurrency markets using ensemble machine learning and deep learning.**
 
@@ -262,30 +262,6 @@ PROJECT CODE/
 │   ├── rf_model.pkl          # Trained Random Forest model (joblib)
 │   ├── lstm_model.h5         # Trained LSTM model (Keras HDF5)
 │   └── scaler.pkl            # Fitted MinMaxScaler
-│
-├── PROJECT REPORTS/
-│   ├── FINAL DOCUMENT 22NG1A6105.pdf
-│   ├── FINAL DOCUMENT 22NG1A6107.pdf
-│   ├── FINAL DOCUMENT 22NG1A6108.pdf
-│   ├── FINAL DOCUMENT 22NG1A6112.pdf
-│   └── TEAM FINAL PROJECT.pdf
-│
-├── INTERNSHIP REPORTS/
-│   ├── 22NG1A6105_INTERNSHIP_SEMINAR_REPORT.pdf
-│   ├── 22NG1A6108_iNTERNSHIP_SEMINAR_REPORT.pdf
-│   ├── 22NG1A6112_iNTERNSHIP_SEMINAR_REPORT.pdf
-│   └── B.PAVAN_INTERNSHIP_SEMINAR_REPORT.pdf
-│
-├── SEMINAR REPORTS/
-│   ├── SEMINAR REPORT 22NG1A6105.pdf
-│   ├── SEMINAR REPORT 22NG1A6107.pdf
-│   ├── SEMINAR REPORT 22NG1A6108.pdf
-│   └── SEMINAR REPORT 22NG1A6112.pdf
-│
-├── EXECUTION VIDEO/
-│   └── final presentation.mp4
-│
-└── fintechAI_PROJECT_pptx.pptx   # Project presentation slides
 ```
 
 ---
